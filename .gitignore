@@ -1,24 +1,135 @@
-# Compiled class file
-*.class
+// Import necessary packages for formatting and locale support
+import java.text.DateFormat;
+import java.text.NumberFormat;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.Scanner;
+import java.util.Date;
 
-# Log file
-*.log
+class PayrollApplication {
+    // Declare static variables for resource bundle and locale
+    static ResourceBundle rb;
+    static Locale locale;
 
-# BlueJ files
-*.ctxt
+    // Method to load the resource bundle based on the selected locale
+    static void loadBundle() {
+        rb = ResourceBundle.getBundle("message", locale);
+    }
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+    // Method to convert a name to proper case (e.g., "john doe" to "John Doe")
+    static String properCase(String name) {
+        String fullName = "";
+        // Split the name by spaces into individual words
+        String names[] = name.split(" ");
+        // Loop through each word to capitalize the first letter
+        for (int i = 0; i < names.length; i++) {
+            String n = String.valueOf(names[i].charAt(0)).toUpperCase() + names[i].substring(1).toLowerCase();
+            fullName += n + " ";
+        }
+        // Return the properly cased full name
+        return fullName.trim(); // Trim to remove the trailing space
+    }
 
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
+    // Method to format a double value into a currency string based on the locale
+    static String currencyFormat(double val) {
+        NumberFormat obj = NumberFormat.getCurrencyInstance(locale);
+        return obj.format(val);
+    }
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+    // Method to get the current date formatted as a string based on the locale
+    static String dateFormat() {
+        Date date = new Date(); // Get the current date
+        DateFormat df = DateFormat.getDateInstance(DateFormat.FULL, locale); // Format the date
+        return df.format(date); // Return the formatted date string
+    }
+
+    // Method to handle user input for language selection and employee details
+    static void input() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Press 1 for English :");
+        System.out.println("हिंदी के लिए 2 दबाएँ : ");
+        int choice = scanner.nextInt(); // Read user's language choice
+
+        // Set the locale based on user choice
+        if (choice == 1) {
+            locale = new Locale("en", "US");
+            System.out.println("You have chosen English.");
+        } else if (choice == 2) {
+            locale = new Locale("hi", "IN");
+            System.out.println("आपने हिंदी चुनी है |");
+        } else {
+            locale = new Locale("en", "US");
+            System.out.println("Invalid choice... Taking English as default");
+        }
+
+        loadBundle(); // Load the resource bundle for the chosen locale
+
+        // Prompt user for employee details using the resource bundle messages
+        System.out.println(rb.getString("id.msg"));
+        int id = scanner.nextInt(); // Read employee ID
+        scanner.nextLine(); // Consume the newline character left by nextInt()
+        System.out.println(rb.getString("name.msg"));
+        String name = scanner.nextLine(); // Read employee name
+        System.out.println(rb.getString("salary.msg"));
+        double basicSalary = scanner.nextDouble(); // Read employee salary
+
+        // Compute and print the payroll details
+        compute(name, basicSalary);
+        scanner.close(); // Close the scanner to prevent resource leak
+    }
+
+    // Method to compute various payroll components based on basic salary
+    static void compute(String name, double basicSalary) {
+        // Calculate different components of the salary
+        double hra = basicSalary * 0.50; // House Rent Allowance
+        double ta = basicSalary * 0.40;  // Travel Allowance
+        double ma = basicSalary * 0.25;  // Medical Allowance
+        double da = basicSalary * 0.20;  // Dearness Allowance
+        double pf = basicSalary * 0.05;  // Provident Fund
+        double gs = basicSalary + hra + da + ta + ma; // Gross Salary
+        double tax = computeTax(gs); // Compute tax based on gross salary
+        double ns = gs - pf - tax; // Net Salary after deductions
+
+        // Print the computed payroll details
+        print(name, gs, hra, ta, ma, da, pf, tax, ns);
+    }
+
+    // Method to compute tax based on annual gross salary
+    static double computeTax(double gs) {
+        double tax = 0.0;
+        double annual = gs * 12; // Convert monthly gross salary to annual
+
+        // Calculate tax based on annual salary slabs
+        if (annual > 500000 && annual < 700000) {
+            return (annual * 0.10) / 12;
+        } else if (annual > 700000 && annual < 900000) {
+            return (annual * 0.20) / 12;
+        } else if (annual > 900000) {
+            return (annual * 0.30) / 12;
+        }
+        return 0.0; // No tax for annual salary below 500000
+    }
+
+    // Method to print the payroll details
+    static void print(String name, double gs, double hra, double ta, double ma, double da, double pf, double tax, double ns) {
+        // Print the current date
+        System.out.println(rb.getString("date.msg") + dateFormat());
+        // Print the employee's name in proper case
+        System.out.println(rb.getString("emp.msg") + properCase(name));
+        // Print allowances and deductions headers
+        System.out.println(rb.getString("allowances.msg") + "\t  " + rb.getString("deduction.msg"));
+        // Print individual allowances and deductions in formatted currency
+        System.out.println(rb.getString("hra.msg") + currencyFormat(hra) + "\t \t  " + rb.getString("pf.msg") + currencyFormat(pf));
+        System.out.println(rb.getString("ta.msg") + currencyFormat(ta) + "\t \t " + rb.getString("tax.msg") + currencyFormat((tax / 12)));
+        System.out.println(rb.getString("ma.msg") + currencyFormat(ma));
+        System.out.println(rb.getString("da.msg") + currencyFormat(da));
+        // Print gross and net salary in formatted currency
+        System.out.println(rb.getString("gs.msg") + currencyFormat(gs));
+        System.out.println(rb.getString("ns.msg") + currencyFormat(ns));
+    }
+
+    // Main method to start the payroll application
+    public static void main(String[] args) {
+        input(); // Call the input method to begin the process
+    }
+}
